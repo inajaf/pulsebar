@@ -23,6 +23,8 @@ export interface MetricsSnapshot {
   gpu: UsageMetric;
   top_cpu: ProcessEntry[];
   top_mem: ProcessEntry[];
+  /** Largest installed apps by on-disk size (slow background scan). */
+  top_disk: ProcessEntry[];
   timestamp_ms: number;
 }
 
@@ -40,6 +42,7 @@ export const EMPTY_SNAPSHOT: MetricsSnapshot = {
   gpu: EMPTY_METRIC,
   top_cpu: [],
   top_mem: [],
+  top_disk: [],
   timestamp_ms: 0,
 };
 
@@ -107,6 +110,11 @@ function startDemoStream(): () => void {
         { name: "Google Chrome", cpu_percent: 12, mem_bytes: (1.3 + Math.random() * 0.4) * GIB },
         { name: "Docker", cpu_percent: 2, mem_bytes: 1.1 * GIB },
         { name: "WindowServer", cpu_percent: 20, mem_bytes: 0.9 * GIB },
+      ],
+      top_disk: [
+        { name: "Xcode", cpu_percent: 0, mem_bytes: 11.8 * GIB },
+        { name: "Docker", cpu_percent: 0, mem_bytes: 3.9 * GIB },
+        { name: "Google Chrome", cpu_percent: 0, mem_bytes: 2.4 * GIB },
       ],
       timestamp_ms: Date.now(),
     };

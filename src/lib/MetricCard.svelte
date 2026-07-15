@@ -13,6 +13,8 @@
   /** Top processes to list under the gauge; `procMode` picks the value shown. */
   export let processes: ProcessEntry[] = [];
   export let procMode: "cpu" | "mem" = "cpu";
+  /** Shown where a process list would be when the platform can't provide one. */
+  export let procNote = "";
 
   function procValue(p: ProcessEntry): string {
     return procMode === "cpu" ? `${p.cpu_percent.toFixed(0)}%` : fmtBytes(p.mem_bytes);
@@ -86,6 +88,8 @@
         </li>
       {/each}
     </ul>
+  {:else if procNote}
+    <div class="proc-note">{procNote}</div>
   {/if}
 
   <footer class="card-foot">
@@ -247,6 +251,15 @@
     color: var(--text);
     font-variant-numeric: tabular-nums;
     flex-shrink: 0;
+  }
+
+  .proc-note {
+    padding-top: 4px;
+    border-top: 1px solid var(--border);
+    font-size: 9.5px;
+    font-style: italic;
+    color: var(--muted);
+    line-height: 1.35;
   }
 
   .card-foot {

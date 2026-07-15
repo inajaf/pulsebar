@@ -31,6 +31,9 @@ pub struct MetricsSnapshot {
     /// Top 3 by CPU and by memory, descending.
     pub top_cpu: Vec<ProcessEntry>,
     pub top_mem: Vec<ProcessEntry>,
+    /// Top 3 installed applications by on-disk size (background scan;
+    /// refreshed every few minutes, not per tick). `cpu_percent` is unused.
+    pub top_disk: Vec<ProcessEntry>,
     pub timestamp_ms: u64,
 }
 
@@ -143,6 +146,8 @@ impl Default for Alerts {
 pub struct AppState {
     pub snapshot: std::sync::Mutex<MetricsSnapshot>,
     pub alerts: std::sync::Mutex<Alerts>,
+    /// Written by the slow background disk scan, merged into snapshots.
+    pub disk_top: std::sync::Mutex<Vec<ProcessEntry>>,
 }
 
 impl Default for AppState {
@@ -150,6 +155,7 @@ impl Default for AppState {
         Self {
             snapshot: std::sync::Mutex::new(MetricsSnapshot::default()),
             alerts: std::sync::Mutex::new(Alerts::default()),
+            disk_top: std::sync::Mutex::new(Vec::new()),
         }
     }
 }

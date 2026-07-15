@@ -49,7 +49,8 @@ pub fn run() {
                 });
             }
 
-            spawn_metrics_loop(handle);
+            spawn_metrics_loop(handle.clone());
+            spawn_disk_scan_loop(handle);
 
             Ok(())
         })
@@ -60,12 +61,28 @@ pub fn run() {
 fn spawn_metrics_loop(app: tauri::AppHandle) {
     tauri::async_runtime::spawn(async move {
         let mut sys = System::new_all();
+        let mut tick: u64 = 0;
 
         loop {
-            let snapshot = sensors::sample(&mut sys);
+            let visible = app
+                .get_webview_window(MAIN_WINDOW)
+                .and_then(|w| w.is_visible().ok())
+                .unwrap_or(false);
+
+            // The process walk dominates the tick cost; only pay for it while
+            // someone can see the lists, and even then every other second.
+            let include_processes = visible && tick % 2 == 0;
+            let mut snapshot = sensors::sample(&mut sys, include_processes);
 
             if let Some(state) = app.try_state::<AppState>() {
+                if let Ok(disk_top) = state.disk_top.lock() {
+                    snapshot.top_disk = disk_top.clone();
+                }
                 if let Ok(mut guard) = state.snapshot.lock() {
+                    if !include_processes {
+                        snapshot.top_cpu = guard.top_cpu.clone();
+                        snapshot.top_mem = guard.top_mem.clone();
+                    }
                     *guard = snapshot.clone();
                 }
             }
@@ -74,16 +91,34 @@ fn spawn_metrics_loop(app: tauri::AppHandle) {
             tray::update_tooltip(&app, &format_tooltip(&snapshot));
             notify::check_and_notify(&app, &snapshot);
 
-            let visible = app
-                .get_webview_window(MAIN_WINDOW)
-                .and_then(|w| w.is_visible().ok())
-                .unwrap_or(false);
             let interval = if visible {
                 VISIBLE_POLL_INTERVAL
             } else {
                 HIDDEN_POLL_INTERVAL
             };
+            tick = tick.wrapping_add(1);
             tokio::time::sleep(interval).await;
+        }
+    });
+}
+
+/// Walking /Applications takes seconds and its result changes rarely, so it
+/// runs on its own slow loop in a blocking thread, far away from the 1s tick.
+fn spawn_disk_scan_loop(app: tauri::AppHandle) {
+    const SCAN_INTERVAL: Duration = Duration::from_secs(600);
+
+    tauri::async_runtime::spawn(async move {
+        loop {
+            let top = tauri::async_runtime::spawn_blocking(|| sensors::storage::top_apps(3))
+                .await
+                .unwrap_or_default();
+
+            if let Some(state) = app.try_state::<AppState>() {
+                if let Ok(mut guard) = state.disk_top.lock() {
+                    *guard = top;
+                }
+            }
+            tokio::time::sleep(SCAN_INTERVAL).await;
         }
     });
 }
