@@ -96,6 +96,7 @@ function startDemoStream(): () => void {
     walk.cpu = step(walk.cpu);
     walk.ram = step(walk.ram);
     walk.gpu = step(walk.gpu);
+    walk.disk = step(walk.disk);
     return {
       cpu: { percent: walk.cpu, used_bytes: null, total_bytes: null, temp_celsius: 52 + walk.cpu / 4 },
       ram: { percent: walk.ram, used_bytes: (walk.ram / 100) * 16 * GIB, total_bytes: 16 * GIB, temp_celsius: null },

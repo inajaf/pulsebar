@@ -6,6 +6,7 @@
   import "$lib/styles/app.css";
 
   let stop: (() => void) | null = null;
+  let destroyed = false;
 
   onMount(async () => {
     // Inside Tauri the window is transparent + vibrancy-backed; the .native
@@ -13,10 +14,18 @@
     if ("__TAURI_INTERNALS__" in window) {
       document.documentElement.classList.add("native");
     }
-    stop = await startMetricsStream();
+    const cleanup = await startMetricsStream();
+    // The component may unmount while the stream was still connecting;
+    // tear down immediately so the listener doesn't leak.
+    if (destroyed) {
+      cleanup();
+    } else {
+      stop = cleanup;
+    }
   });
 
   onDestroy(() => {
+    destroyed = true;
     stop?.();
   });
 

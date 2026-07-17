@@ -33,7 +33,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2px;
+  padding: 0 2px 8px;
+  border-bottom: 1px solid var(--border);
 }
 
 .header-title {

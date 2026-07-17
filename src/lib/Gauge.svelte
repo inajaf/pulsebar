@@ -12,7 +12,11 @@
   const SWEEP = 270; // degrees of visible arc
   const START = 135; // arc begins at bottom-left
 
-  const display = tweened(0, { duration: 600, easing: cubicOut });
+  // JS tweens don't see the CSS reduced-motion override, so gate manually.
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const display = tweened(0, { duration: reducedMotion ? 0 : 600, easing: cubicOut });
   $: display.set(value === null ? 0 : Math.min(Math.max(value, 0), 100));
 
   $: level =
@@ -56,7 +60,8 @@
   });
 </script>
 
-<svg width={size} height={size} viewBox="0 0 {size} {size}" class="gauge" data-level={level}>
+<!-- Decorative: the numeric value next to the gauge carries the data. -->
+<svg width={size} height={size} viewBox="0 0 {size} {size}" class="gauge" data-level={level} aria-hidden="true">
   <defs>
     <linearGradient id="{uid}-ok" x1="0%" y1="100%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="var(--ok-2)" />
