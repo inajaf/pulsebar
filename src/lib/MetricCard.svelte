@@ -21,10 +21,16 @@
   }
 
   // Same duration/easing as the gauge so number and arc move together.
-  const display = tweened(0, { duration: 600, easing: cubicOut });
+  // JS tweens don't see the CSS reduced-motion override, so gate manually.
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const display = tweened(0, { duration: reducedMotion ? 0 : 600, easing: cubicOut });
   $: display.set(metric.percent ?? 0);
 
-  $: level =
+  type Level = "low" | "medium" | "high" | "very-high" | "unavailable";
+
+  $: level = (
     metric.percent === null
       ? "unavailable"
       : metric.percent >= 99
@@ -33,7 +39,19 @@
           ? "high"
           : metric.percent >= 60
             ? "medium"
-            : "low";
+            : "low"
+  ) as Level;
+
+  // Temperature severity mirrors the usage ramp: amber when hot, red when
+  // critical. Thresholds are conservative for consumer silicon.
+  $: tempLevel =
+    metric.temp_celsius === null
+      ? null
+      : metric.temp_celsius >= 90
+        ? "hot"
+        : metric.temp_celsius >= 75
+          ? "warm"
+          : "normal";
 
   function fmtBytes(n: number | null): string {
     if (n === null) return "--";
@@ -58,7 +76,7 @@
       <span class="card-label">{label}</span>
     </span>
     {#if metric.temp_celsius !== null}
-      <span class="pill">{Math.round(metric.temp_celsius)}°C</span>
+      <span class="pill" data-temp={tempLevel}>{Math.round(metric.temp_celsius)}°C</span>
     {/if}
   </header>
 
@@ -84,6 +102,7 @@
       {#each processes as p}
         <li class="proc-row">
           <span class="proc-name">{p.name}</span>
+          <span class="proc-leader" aria-hidden="true"></span>
           <span class="proc-val">{procValue(p)}</span>
         </li>
       {/each}
@@ -100,7 +119,7 @@
         <span class="bytes">{fmtBytes(metric.used_bytes)} <em>in use</em></span>
       {/if}
     {/if}
-    <Sparkline values={history} />
+    <Sparkline values={history} {level} />
   </footer>
 </article>
 
@@ -117,8 +136,14 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    transition: border-color 400ms ease, box-shadow 400ms ease;
+    transition: border-color 400ms ease, box-shadow 400ms ease, transform 200ms ease;
     overflow: hidden;
+  }
+
+  /* Subtle lift on hover — the HUD invites a closer look. */
+  .card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
   }
 
   /* Glass edge: a hairline highlight along the card's top. */
@@ -184,6 +209,8 @@
     font-weight: 700;
     line-height: 1;
     letter-spacing: -0.01em;
+    /* Digits keep a fixed width so the number doesn't wobble mid-tween. */
+    font-variant-numeric: tabular-nums;
   }
 
   .value small {
@@ -247,6 +274,14 @@
     min-width: 0;
   }
 
+  /* Dotted leader ties each name to its value, table-of-contents style. */
+  .proc-leader {
+    flex: 1;
+    min-width: 8px;
+    border-bottom: 1px dotted var(--border-strong);
+    transform: translateY(-3px);
+  }
+
   .proc-val {
     color: var(--text);
     font-variant-numeric: tabular-nums;
@@ -292,5 +327,18 @@
     border-radius: 999px;
     padding: 1px 7px;
     white-space: nowrap;
+    transition: color 400ms ease, background 400ms ease, border-color 400ms ease;
+  }
+
+  .pill[data-temp="warm"] {
+    color: var(--warn);
+    background: var(--warn-soft);
+    border-color: transparent;
+  }
+
+  .pill[data-temp="hot"] {
+    color: var(--danger);
+    background: var(--danger-soft);
+    border-color: transparent;
   }
 </style>
