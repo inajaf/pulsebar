@@ -9,8 +9,8 @@
   let destroyed = false;
 
   onMount(async () => {
-    // Inside Tauri the window is transparent + vibrancy-backed; the .native
-    // tokens make the UI a dark glass HUD over it.
+    // Inside Tauri the .native tokens force the dark instrument-panel
+    // theme regardless of the OS appearance.
     if ("__TAURI_INTERNALS__" in window) {
       document.documentElement.classList.add("native");
     }

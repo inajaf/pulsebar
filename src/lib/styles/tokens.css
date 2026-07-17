@@ -37,21 +37,20 @@
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
 }
 
-/* Native Tauri window: transparent, backed by macOS hudWindow vibrancy —
-   always a dark glass, so dark tokens apply regardless of the OS theme.
-   Keep this block in sync with the dark block below. */
+/* Native Tauri window: always the dark "instrument panel" look regardless
+   of the OS theme, on a solid background so content stays crisp over any
+   desktop. Keep this block in sync with the dark block below. */
 :root.native {
   color-scheme: dark;
-  /* Translucent dark wash keeps the HUD readable over bright desktops. */
-  --bg: rgba(5, 7, 13, 0.32);
-  --bg-aurora-1: transparent;
-  --bg-aurora-2: transparent;
-  --surface: rgba(13, 19, 33, 0.55);
+  --bg: #05070d;
+  --bg-aurora-1: rgba(34, 211, 238, 0.07);
+  --bg-aurora-2: rgba(99, 102, 241, 0.06);
+  --surface: rgba(13, 19, 33, 0.66);
   --surface-strong: rgba(148, 163, 184, 0.07);
   --text: #ecf2ff;
   --muted: #8b96ad;
-  --border: rgba(148, 163, 184, 0.14);
-  --border-strong: rgba(148, 163, 184, 0.24);
+  --border: rgba(148, 163, 184, 0.1);
+  --border-strong: rgba(148, 163, 184, 0.2);
 
   --ok: #22d3ee;
   --ok-2: #38bdf8;

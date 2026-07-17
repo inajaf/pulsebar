@@ -42,9 +42,11 @@ pub fn run() {
 
                 // Keep the tray app (and its background poller) alive when the
                 // user clicks the window's close button — hide instead of destroy.
-                window.on_window_event(|event| {
+                let win = window.clone();
+                window.on_window_event(move |event| {
                     if let WindowEvent::CloseRequested { api, .. } = event {
                         api.prevent_close();
+                        let _ = win.hide();
                     }
                 });
             }
